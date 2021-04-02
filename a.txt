@@ -1,0 +1,360 @@
+********************
+* Submission Rules *
+********************
+When to submit: Before Monday, March 29th, at 11:59pm
+Where to submit: To the cyberuniversity (just like the last homework)
+What to submit: Your PA2.sh file. (I will no longer require you to put your
+                Student ID into the filename, because I have learned that the
+                cyberuniversity already does that when you submit it.)
+
+******************
+* Basic Concept: *
+******************
+This assignment involves implementing a set of aliases. There will be an alias
+for each movement direction, and also one for each of the following commands:
+   score, x, quit, i, l, getall, dropweight, press, put, and flush
+
+You cannot use any commands or syntax not covered in the first two lectures.
+You cannot use variables, loops, etc.
+You must implement each of the lines in the way described below.
+
+One of the challenges of the homework is to create proper wildcard patterns. To
+help you with testing your patterns, I have provided you with a set of all of
+the file/directory names that your patterns will need to interact with. (The
+"interaction" means matching to exactly the right subset of these names, when
+you type ls ~/PA2/filenamesdir/<pattern>.) Here's the full list of those names:
+   % ls ~/PA2/filenamesdir
+   1        button      e       lake      pc         se            temperature5
+   9        cable       floor   lamp      pipe       shovel        temperature6
+   axe      chute       floppy  n         pipes      silver        towel
+   bed      d           gold    ne        platinum   sw            u
+   boulder  description ibm     nw        preserver  temperature2  urinal
+   box      dial        key     painting  rms        temperature3  w
+   bracelet diamond     ladder  paper     s          temperature4  weight
+   %
+
+Among the above, the following are the objects that the "getall" command needs
+to be able to move into your inventory:
+   axe, bracelet, diamond, floppy, gold, key, lamp, paper, platinum, preserver,
+   rms, shovel, silver, towel, and weight
+What this means is: "getall" will use a "mv" command with a wildcard pattern
+that matches to all of the getable items, but to none of the other names within
+filenamesdir.
+
+In a similar way, you will also be looking for a wildcard pattern to implement
+"put". The pattern should identify the treasures: bracelet, diamond, gold,
+platinum, and silver. The pattern should move nothing else from your inventory.
+But if the pattern matches to things that can never be in the inventory, such
+as the ladder or the dial, then that is not a problem.
+
+The same pattern that you use for "put" will also work for "score", because
+only treasures give score points.
+
+
+*************************
+* Line-by-line guidance *
+*************************
+Lines 1-4 (Type these as shown):
+        ls ~/X &> /dev/null || ln -s /dev/null ~/X
+        ls ~/_ &> /dev/null || ln -s ~/PA2/rooms ~/_
+        cd ~/PA2;rm -rf rooms;tar -xf rooms.tar
+        cd rooms/receivingRoom;PS1=">"
+
+        The above four lines set up the game.
+        -The first two lines create useful links (if they don't already exist).
+         -One link makes it easy to send unwanted output to "/dev/null", by
+          letting you type "~/X" instead.
+         -The other link makes it easier to access game files. For example, the
+          inventory is at "~/_/i/i" and the treasure is at "~/_/treasureRoom".
+        -The third line resets the game rooms to their initial states, based on
+         the rooms.tar file that I have provided to you.
+        -The fourth line moves you to the starting room and sets the prompt to
+         a ">", just like in the real game. (I haven't taught you how to change
+         the prompt, so I've simply done it for you.)
+        
+Line 5: This line is empty.
+
+Line 6: alias x='cat'
+        I have given you the answer to this one, because it is so easy. Also,
+        it reminds you of the syntax of the alias command.
+
+Line 7: alias score='echo You have scored `__1__`0 points.'
+        I have given you a lot of this command also, to help get you started on
+        the concept of how these aliases are implemented.
+        
+        The part that I have not given you is the "__1__".
+        -Q:What does this part need to do?
+         A:It needs to look in the treasureRoom for treasures, and it needs to
+           count how many treasures it finds.
+        -Q:How to look in that directory (given that we can only use commands
+           from the first 2 lectures)?
+         A:Well, it is a directory, and we know a command that can list the
+           contents of a directory.
+        -Q:How to count the number of matches found?
+         A:We have only learned one command that can count. (Later, we will
+           also learn the "expr" command, but not yet, so we can't use "expr"
+           on this assignment. Instead we have to find a counting command in
+           the first two lectures.)
+        -Q:How to get rid of the error message that displays if there no
+           treasures in the treasureRoom?
+         A:Use redirection (se Lecture #2).
+
+Line 8: alias quit='__1__'
+        The quit command runs "score", then runs "exit".
+        Line 7 created "score", so you can now use it as you would any command.
+        As for "exit", it is a UNIX command that exits a shell or script. In
+        this present instance, it exits the "bash" command that we type to run
+        the game. And recall that we do type "bash" when we run the game, see:
+           % head -5 walkthroughPA2.txt
+           To play the game, you first type bash, then run the Homework script:
+           % bash;source ~/PA2/PA2.sh
+           Receiving room
+           You are in a round, stone room with a door to the east.  There
+           is a sign on the wall that reads: ‘receiving room’.
+           %
+        
+Line 9:  alias nogo='echo You cannot go that way.'
+
+Lines 10-16: These lines cover every direction except se, ne, and u. (We have
+         to treat those three directions differently, because they're backtrack
+         directions in the maze.)
+
+         As for the other 7 directions, this is how they are run:
+         1. Determine if this move is a backtrack, and perform a "cd .." if so.
+         2. If it is not a backtrack, try moving in the direction indicated.
+            For example, if this is the alias for "n", then try doing a "cd n".
+         3. If either of the above cd's worked, run the "disp" command (which
+            we will implement on line 22, below).
+         4. If neither of the cd's worked, run the "nogo" command (which we
+            have implemented on line 9).
+         So now, how to do these four steps? It looks like this:
+            alias [dir]='__1__ || __2__ && __3__ || __4__', which expands based
+            on the above discussion to:
+            alias [dir]='__1__ || cd [dir]&>~/X && disp || nogo'
+
+            From the above, we see that step 1 must not only perform the cd ..,
+            but it must also end with the correct success/fail status, so that
+            step 2 can know whether it should run. But how will this be done?
+            It will use the "|" and "&&". It will not use a ";" because that
+            would destroy the success/fail status, and it will not use "(...)"
+            because that would prevent the "cd .." from working (see Lecture 2,
+            slides 180-186).
+            So what does __1__ need to do, in more detail? It needs to:
+             - See what the basename of the present directory is.
+             - See whether that basename is the opposite of the requested move
+               direction (eg, if the alias is for "n", the opposite is "s", if
+               the alias is for "sw", the alias is "ne").
+               This is the step that requires some thought. We have learned a
+               command in Lecture 1 that can look for a matching string within
+               a text input. But we need to use the right flag, because a
+               basename of "ne" should not match to "n" or "e".
+             - If the basename is the opposite, then do a "cd ..".
+
+Lines 17-19: These lines cover se, ne, and u (the directions that may have
+             disallowed backtracking in the maze). There is an added feature
+             to these aliases:
+             alias [dir]='__0__ && __1__ || cd [dir]&>~/X && disp || nogo'
+             The part __1__ is the same as on lines 10-16, but the __0__ makes
+             the __1__ only run conditionally. That condition is that there is
+             no file/link with the requested move direction (ie, depending on
+             the alias: se, ne, or u).
+             The structure of __0__ must: "echo __A__ | fgrep __B__". The __A__
+             and __B__ indicate the arguments and flags for the echo and fgrep,
+             respectively.
+
+Line 20: This line is empty.
+
+Line 21: alias l='mv 1 9&>~/X; disp'
+
+Line 22: alias disp='...'
+         The disp command's primary job is to display what the player reads
+         when they enter a room. But it has other jobs as well and actually
+         does four things:
+         __1__ Display the description. This may display in long form (on the
+               first time you enter a room), or in short form (if revisiting).
+               Which form to display is determined by whether the directory
+               has a file named "9" or named "1". There is a reason why the
+               visited rooms are indicated by a file named "1": visited rooms
+               display just 1 line from description, whereas unvisited rooms
+               display the full file (which is always shorter than 9 lines).
+               Lecture 1 has a command that can get this behavior, but remember
+               to use the "-n" flag with that command.
+
+         __2__ Move the "9" file (if present) to "1". In other words, once the
+               long message is displayed one time, it is the job of disp to
+               remember that the room has now been visited.
+
+         __3__ Display the messages from the "There" file. This involves simply
+               executing "dispmessages", which is the alias we'll be defining
+               on line 23.
+
+         __4__ An unrelated job that "disp" must do is to remove symbolic links
+               from the path. See slide 181 of Lecture 2 for more on how to do
+               this. This would've been easy, if the game didn't give a message
+               when you try moving in an invalid direction (see the nogo alias
+               on line 9). But the need to conditionally run nogo meant that
+               the above aliases had: "__1__ || cd [dir]&>~/X && DISP || nogo".
+
+               We almost could solve this simply: "...&&(disp;echo>~/X)||nogo".
+               But the problem with the prior line is that the "disp" command
+               would be run inside of parentheses. That is because the "disp"
+               command needs to do a "cd" in order to remove symbolic links
+               from the pwd path. In order for the cd to work, "disp" cannot
+               go inside parentheses, and the solution is less simple.
+               
+         The full structure of the solution is:
+         alias disp='__4__&&(__1__;(__2__; __3__))'         
+
+
+Line 23: alias dispmessages='fgrep -hw `__1__` -h ~/_/There | cut __2__; __3__'
+         This command displays the messages for the objects in the room. These
+         messages are found in the file named "There", in the rooms directory.
+         If there are files in the room with no matches in the "There" file
+         (eg, the dial, ladder, pipes, etc), then that is OK, because it just
+         means that those files don't get messages.
+
+         As you see above, we need to use fgrep to print lines from "There"
+         that match to any of the filenames in the present room. Above, you
+         can also see that I have indicated the use of the -h and -w flags.
+         (I have used the -h flag twice, for reasons explained below.)
+
+         The difficult part is that we need to make fgrep search for multiple
+         words at once. This means that each word needs a -e flag in front of
+         it. And putting these "-e" in front of each requires creative thinking
+         because we can only use commands from the first two lectures.
+
+         Recall that the lines of the "es" file are also all " -e". (The "es"
+         file is provided to you, in the rooms directory.) With this "es" file,
+         we can then use paste, along with keyboard redirection (see Lecture 2,
+         slide 40) to create the desired arguments for fgrep. Now it is true
+         that there will be many extra "-e" arguments at the end, but they will
+         not cause a problem. (If you want to know why they don't cause a
+         problem, it is because each pair of "-e -e" is going to search for the
+         whole word "-e", which isn't in the "There" file. If the number of
+         extra "-e"s is odd, then the final one becomes "-e -h", which looks
+         for the whole word "-h" and therefore prints nothing. If, however, the
+         number of extra "-e"s is even, then the -h becomes a flag to fgrep.
+         But this also is not a problem, because it is just a redundant flag,
+         since I already set the -h flag.)
+
+         Next, the __2__ are the flags to the "cut" command, which is used to
+         remove everything after the semicolon (;).
+         What does this mean? Well, looking at the end of the "There" file, we
+         can see that the last five lines have semicolons:
+         you will see that some objects (eg, the
+         ladder or the dial) don't give a message. You will also find that
+         the last 5 lines have semicolons (;) in them:
+             % tail ~/PA2/rooms/There
+             There is a shovel here.
+             There is a silver bar here.
+             There is a slip of paper here.
+             There is an axe here.
+             There is an emerald bracelet here.
+             There is a wax statuette of Richard Stallman here.;rms
+             It is normal room temperature in here.;temperature2
+             It is luke warm in here.;temperature3
+             It is comfortably hot in here.;temperature4
+             It is refreshingly hot in here.;temperature5
+             %
+         In each of the last 5 lines, the filename that triggers the message
+         is found after the semicolon. I did this because these 5 messages do
+         not already have the name of the file in the message (unlike all of
+         the other lines in the "There" file -- for example the line "There is
+         an emerald bracelet here" has the word "bracelet" in it).
+
+         Finally, the __3__ command should print no output, but should run
+         successfully. This success signal is needed so that the game doesn't
+         execute "nogo" (on lines 10-19).
+
+Line 24: This line is empty.
+
+Line 25: alias i='echo You currently have:;(cd ~/i/i;__1__)'
+         As you can see, a cd is performed inside of a parenthesis. In this
+         case, it is OK, because we don't really want to change the directory.
+         Instead, the reason for the cd is so that the ls command will just
+         list file names, without paths.
+         For the __1__ part, you need to list what is in the directory, then
+         add an "A" in front of each entry. This involves using xargs with the
+         -n1 flag.
+         Another concern is: what if your inventory is empty? Then we should
+         not see any output from __1__. This can be achieved using fgrep.
+
+Line 26: alias getall='mv __1__ ~/_/i/_&>~/X||echo Nothing to take.; (cd ~/_/i/_;__2__)&&mv ~/_/i/_/* ~/_/i/i&>~/X'
+         The __1__ is a SINGLE wildcard pattern that matches to all objects
+         that can be picked up. This is a very hard pattern to create (which
+         means that it can help you learn how to use wildcards). To test your
+         pattern, see if you get the following output:
+            % cd ~/PA2/filenamesdir; ls __1__
+            axe       floppy  lamp      preserver  silver
+            bracelet  gold    paper     rms        towel
+            diamond   key     platinum  shovel     weight 
+            %
+
+         The __2__ is used to display the "Taken: ..." messages. Notice that
+         the reason we moved the files into "~/_/i/_", instead of directly into
+         the inventory ("~/_/i/i"), was so that we could display these "Taken"
+         messages. Note also that you don't display "Taken" if nothing was
+         taken. Note also that you will want to use "xargs -n1", similar to
+         how you used it to implement the "i" command on Line 25.
+
+Line 27: alias dropweight='__1__ && __2__;(__3__;__4__&&__5__)2>~/X'
+
+         __1__ You have the weight in ~/i/i and you are in the button's room.
+         __2__ Hide this room (which is the d subdirectory of the weight room)
+               by: renaming it to ".d", in the parent directory, then creating
+               a link named "d" in the parent directory (so, in the future,
+               going down the ladder will take you to buttonRoom instead of to
+               this room), then go to the buttonRoom.
+         __3__ If you don't have the weight, say "You do not have that."
+         __4__ If you have the weight, move it to this room and say "Done."
+         __5__ If you just dropped it on the button, say "A passageway opens."
+         
+Line 28: alias press='(cat | __1__) <'
+         This line is using the "<" at the end in a very strange way. If you
+         type "press word", then "word" goes after the "<" to create "< word".
+         And that redirect will be used by the "cat" command. So it becomes:
+            "(cat < word | __1__)".
+         What this means is that you will get a UNIX error message if "word" is
+         not a file in the present directory. That error message was discussed
+         in the walkthrough.
+         Now, consider the following:
+            % cat ~/PA2/rooms/buttonRoom/button
+            As you press the button, you notice a passageway open up, but
+            as you release it, the passageway closes.
+            % cat ~/PA2/rooms/buttonRoom/ladder
+            It is a normal ladder that is permanently attached to the hole.
+            %         
+         See that the button file contains unique text. We can therefore use
+         fgrep to look for some unique text that will tell you that you did
+         press the button, and not something else.
+
+         So now, to implement the __1__, you need to display the text about
+         the passageway, if you pressed the button. Otherwise, you need to
+         display "You cannot press that."
+
+Line 29: alias put='__1__'
+         The output messages should follow these rules:
+         - If there is no urinal or chute say: "Nothing to put treasures into."
+           - Otherwise, if your inventory has no treasures (bracelet, diamond,
+             gold, platinum, or silver), say: "No treasure to put into it."
+             - Otherwise, if it is in the chute, say: "You hear it slide down
+               the chute and off into the distance.", then also display the
+               score (by running "score").
+               - Otherwise, say: "You hear it plop down in some water below."
+
+         In addition to producing the right messages, the command also needs
+         to move all treasures in your inventory to either the treasureRoom
+         (if you put it in the chute), or else to "~/PA2/rooms" (if you put
+         it in the urinal).
+
+Line 30: alias flush='__1__'
+         If you are not at the urinal, say "I see nothing to flush." Otherwise,
+         say "Whoooosh!!".
+         Also, if anything had been put in the urinal (ie, if any treasures are
+         in ~/PA2/rooms), then move them to the treasureRoom and run "score".
+
+Line 31: This line is empty.
+
+Line 32: l
+         This isn't an alias. It is actually executing the 'l' command, because
+         the game does start by displaying the contents of the first room.
