@@ -8,6 +8,7 @@
 #include <utility>
 #include <bitset>
 #include <memory>
+// Using smart pointer to deal with memory leak
 using namespace std;
 
 Node::Node(int f, char c)
@@ -23,6 +24,7 @@ Node::Node(shared_ptr<Node> l, shared_ptr<Node> r)
 
     this->left = (l->frequency < r->frequency) ? l : r;
     this->right = (l->frequency < r->frequency) ? r : l;
+    // Maintain some order
 }
 
 bool compare::operator()(const shared_ptr<Node> x, const shared_ptr<Node> y) const
@@ -33,11 +35,11 @@ bool compare::operator()(const shared_ptr<Node> x, const shared_ptr<Node> y) con
 shared_ptr<Node> input(const char *filename)
 {
     ifstream f(filename, ios::binary);
-    int asc[256] = {};
+    int asc[256] = {}; // Init the table with all zero. for record the freq of byte
     char byte;
 
     while (f.get(byte))
-    { //index error fixed, signed char to unsigned char to int to be array index correctly
+    { // Index error fixed, signed char to unsigned char to int, to be array index correctly
         int index = static_cast<int>((static_cast<unsigned char>(byte)));
         asc[index]++;
     }
@@ -50,9 +52,9 @@ shared_ptr<Node> huffman(int *data)
 {
     priority_queue<shared_ptr<Node>, vector<shared_ptr<Node>>, compare> pq;
     for (auto i = 0; i < 256; i++)
-    { //add node which appeared in input into my pq
+    { // Add node which appeared in input into my pq
         if (data[i])
-        {
+        { // Cast into char may ambiguous, but I only need to record it with 8-bit
             shared_ptr<Node> tmp(new Node(data[i], static_cast<char>(i)));
             pq.push(tmp);
         }
@@ -78,10 +80,10 @@ shared_ptr<Node> huffman(int *data)
 }
 
 void inorderTraversal(shared_ptr<Node> current, map<string, string> &table, string code = "")
-{ //code is trace the tree, and append '0' when go left child, '1' for right
+{ // Argument code trace the tree, append '0' when go left child, '1' for right
     if (current)
     {
-        inorderTraversal(current->left, table, code + "0"); //left node put small freqeuncy and encode 0
+        inorderTraversal(current->left, table, code + "0");
         if (current->left == nullptr && current->right == nullptr)
             table[current->content] = code;
         inorderTraversal(current->right, table, code + "1");
@@ -90,9 +92,9 @@ void inorderTraversal(shared_ptr<Node> current, map<string, string> &table, stri
 
 pair<pair<int, map<string, string>>, string> encoding(const char *filename)
 {
-    map<string, string> table; // store huffman result
+    map<string, string> table; // Store huffman result
     inorderTraversal(input(filename), table);
-    //built the table, where input function return a ordered priority quere with the tree
+    // Built the table, with where input function return a ordered priority quere with the tree
 
     // Table information
     //for (auto &i : table)
@@ -100,9 +102,9 @@ pair<pair<int, map<string, string>>, string> encoding(const char *filename)
 
     ifstream f(filename, ios::in | ios::binary);
     char byte;
-    string binary, result = "";
+    string binary = "", result = "";
     int count = 0;
-
+    // Reread the file to encode it
     while (f.get(byte))
     {
         binary += table[string(1, byte)];
@@ -124,6 +126,7 @@ pair<pair<int, map<string, string>>, string> encoding(const char *filename)
         result += byte_last;
     }
     cout << "After encoding, " << result.length() << " bytes" << endl;
+    //cout << "Some compress ratio " << result.length() / count << endl;
 
     return make_pair(make_pair(padding, table), result);
 }
@@ -133,23 +136,24 @@ void decode(const char *filename, const string huff, int padding, map<string, st
     int length = huff.length();
     string real = "";
 
-    map<string, string> intable; //invert the table, for convenient output
+    map<string, string> intable; // Invert the table, for convenient output
     for (auto i : table)
         intable[i.second] = i.first;
 
     for (int i = 0; i < length; i++)
-    { // decompress, take a char with compressed and turn it into 8-bit binary string
+    { // Decompress, take a char with compressed and turn it into 8-bit binary string
         bitset<8> byte = static_cast<int>(huff[i]);
         //cout<<byte<<endl;
+        // WARNING: Maybe crush, if the string cannot afford the hole data
         real += byte.to_string();
     }
-    length = length * 8 - padding; //real length
-    real = real.substr(0, length); //remove padding
+    length = length * 8 - padding; // Original length
+    real = real.substr(0, length); // Remove padding
 
-    ofstream f(filename, ios::out);
+    ofstream f(filename, ios::out | ios::binary);
 
-    //    for (auto i : intable)
-    //        cout << i.first << " " << i.second << endl;
+    //for (auto i : intable)
+    //    cout << i.first << " " << i.second << endl;
 
     int j = 0; //pos
     int x = 1; //len
@@ -157,7 +161,7 @@ void decode(const char *filename, const string huff, int padding, map<string, st
     while (j < length)
     {
         if (intable[real.substr(j, x)] != "")
-        { //if match, skip the x pos
+        { // Match the pattern, skip the x pos
             f << intable[real.substr(j, x)];
             j += x;
             x = 1;

@@ -17,7 +17,7 @@ public:
 };
 
 class compare
-{
+{// For priority queue
 public:
     bool operator()(const shared_ptr<Node>, const shared_ptr<Node>) const;
 };
@@ -29,4 +29,4 @@ void inorderTraversal(shared_ptr<Node>, map<string, string> &, string); //root, 
 pair<pair<int, map<string, string>>, string> encoding(const char *);
 
 void decode(const char *, const string, int, map<string, string> &);
-//output the result into file named "output.txt"
+// filename of output, huffman encoded string, huffman encoded table
