@@ -25,7 +25,7 @@ Node *huffman(int *);
 Node *input(string);
 
 void inorderTraversal(Node *, map<string, string> &, string); //root, table, code
-pair<pair<int, map<string, string>>, string> encoding(const string);
+pair<pair<int, map<string, string>>, string> encoding(const char *);
 
-void decode(const string, int, map<string, string> &);
+void decode(const char *, const string, int, map<string, string> &);
 //output the result into file named "output.txt"
