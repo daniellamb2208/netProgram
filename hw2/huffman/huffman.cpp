@@ -101,6 +101,12 @@ pair<pair<int, map<string, string>>, string> encoding(const char *filename)
     //    cout << i.first << " " << i.second << endl;
 
     ifstream f(filename, ios::in | ios::binary);
+    if (!f.is_open())
+    {
+        //WARNING: It doesn't handle file DNE;
+        cerr << "File doesn't exist" << endl;
+        exit(1);
+    }
     char byte;
     string binary = "", result = "";
     int count = 0;
@@ -113,7 +119,7 @@ pair<pair<int, map<string, string>>, string> encoding(const char *filename)
     f.close();
     cout << "Before encoding, " << count << " bytes" << endl;
 
-    for (int i = 0; i < (binary.length() / 8); i++)
+    for (int i = 0; i < int(binary.length() / 8); i++)
         // take every 8-bit binary string to int to char, and append it to encoded string
         result += static_cast<char>(stoi(binary.substr(i * 8, 8), nullptr, 2));
 
@@ -150,13 +156,14 @@ void decode(const char *filename, const string huff, int padding, map<string, st
     length = length * 8 - padding; // Original length
     real = real.substr(0, length); // Remove padding
 
-    ofstream f(filename, ios::out | ios::binary);
+    ofstream f(filename, ios::out | ios::binary | ios::app);
 
     //for (auto i : intable)
     //    cout << i.first << " " << i.second << endl;
 
     int j = 0; //pos
     int x = 1; //len
+    //std::cout << length << std::endl;
 
     while (j < length)
     {
@@ -169,9 +176,10 @@ void decode(const char *filename, const string huff, int padding, map<string, st
         else
             x++;
     }
+
     f.close();
 }
-
+/*
 int main(int argc, char *argv[])
 {
     cout << "Encode init" << endl;
@@ -183,4 +191,4 @@ int main(int argc, char *argv[])
     decode(argv[2], parameter.second, parameter.first.first, parameter.first.second);
 
     return 0;
-}
+}*/

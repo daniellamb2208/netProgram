@@ -17,7 +17,7 @@ public:
 };
 
 class compare
-{// For priority queue
+{ // For priority queue
 public:
     bool operator()(const shared_ptr<Node>, const shared_ptr<Node>) const;
 };
