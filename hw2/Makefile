@@ -6,4 +6,4 @@ all:
 	$(CC) $(CFLAGS) -o client socket/client.cpp socket/client.h huffman/huffman.h huffman/huffman.cpp
 
 clean:
-	rm server client *.huf output_* *.o
+	rm server client *.huf output_* *.o socket/*.gch huffman/*.gch
