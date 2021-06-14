@@ -1,0 +1,42 @@
+How to demo my homework.
+
+```javac server.java client.java```
+
+open server
+```java server```
+open clinet 
+```java client```
+
+When start a new client, it request you to type your name
+> java client
+...........................
+Please tell who you are
+> lamb
+Hello, lamb. Welcome the tic-tac-toe game, Waitng for your opponent...
+(if another gamer joined)
+-> Game is now start, please choose your move, typing a int accroding the position.
+...........................
+
+and now I need to add another client to start the game
+> java client
+...........................
+Please tell who you are
+> lamb2
+Hello, lamb2. Welcome the tic-tac-toe game, Waitng for your opponent...
+
+Game is start, you are the defender, waiting your opponent to move first.
+...........................
+
+我的程式沒有使用GUI輸入，在嘗試實做的時候遇到太多問題了，所以我使用終端機輸入法，玩遊戲的方法就是一人走一步
+輸入的參數是依照格子的順序去給的，那結果會顯示在彈出來的JFrame當中，至於細節會顯示在終端機裡頭。
+------------
+| 0 | 1 | 2 |
+-------------
+| 3 | 4 | 5 |
+-------------
+| 6 | 7 | 8 |
+-------------
+伺服器端則是有個小視窗來當成等待的房間，新加入的玩家名字會顯示在視窗裡頭，而視窗還會提示誰與誰的遊戲開始了。
+關於作業實做的部份大概就只有這樣，沒有其他特別的神奇UI，和其他可以說嘴的功能。
+
+Demo資料夾中有遊戲進行的一些花絮。
