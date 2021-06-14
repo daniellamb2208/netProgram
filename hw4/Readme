@@ -40,3 +40,8 @@ Game is start, you are the defender, waiting your opponent to move first.
 關於作業實做的部份大概就只有這樣，沒有其他特別的神奇UI，和其他可以說嘴的功能。
 
 Demo資料夾中有遊戲進行的一些花絮。
+Thanks to @pingcheng-lin lifesaving reminding.
+
+Because of race condition, I failed to implememt interative with GUI,
+so, If there were time or breath, Hope can rewrite the GUI to familiar to java and GUI usage
+Or maybe it would pratice in final project
